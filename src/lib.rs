@@ -115,17 +115,25 @@ pub async fn stop() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-/// Returns the version of the bootloader.
+/// Returns the version of geist that is running
 pub async fn version() -> Result<(), Box<dyn std::error::Error>> {
-    let home = std::env::var("HOME").unwrap();
-    let version_path = format!("{}/{}/VERSION", home, BUILD_PATH);
 
+    let tag = tag.unwrap_or_else(|| "latest".to_string());
+
+    // Run `cat` inside the Docker container
     let output = Command::new("bash")
         .arg("-c")
-        .arg(format!("cat {}", version_path))
+        .arg(format!("docker exec {} cat /root/geist_ws/src/geist/VERSION", CONTAINER_NAME))
         .output()?;
 
-    // print the output
+    if !output.status.success() {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Docker exec command failed",
+        )));
+    }
+
+    // Print the output
     println!("\n");
     println!("=== Geist Version ===");
     println!("{}", String::from_utf8_lossy(&output.stdout));
