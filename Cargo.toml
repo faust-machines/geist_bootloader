@@ -1,0 +1,19 @@
+[package]
+name = "geist_bootloader"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.75"
+# lets add derive feature to clap
+clap = { version = "4.4.7", features = ["derive"] }
+futures = "0.3.28"
+git2 = "0.18.1"
+shiplift = "0.7.0"
+tokio = { version = "1.33.0", features = ["full"] }
+
+[[bin]]
+name = "geist"
+path = "src/main.rs"

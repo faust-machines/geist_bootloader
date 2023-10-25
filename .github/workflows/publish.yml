@@ -1,0 +1,26 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        default: true
+
+    - name: Publish to crates.io
+      uses: actions-rs/cargo@v1
+      with:
+        command: publish
+        args: --token ${{ secrets.CARGO_TOKEN }}
