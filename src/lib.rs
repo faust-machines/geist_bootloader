@@ -118,8 +118,6 @@ pub async fn stop() -> Result<(), Box<dyn Error>> {
 /// Returns the version of geist that is running
 pub async fn version() -> Result<(), Box<dyn std::error::Error>> {
 
-    let tag = tag.unwrap_or_else(|| "latest".to_string());
-
     // Run `cat` inside the Docker container
     let output = Command::new("bash")
         .arg("-c")
