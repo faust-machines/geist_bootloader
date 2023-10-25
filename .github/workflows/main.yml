@@ -2,9 +2,9 @@ name: main
 
 on:
   push:
-    branches: [main]  # adjust the branch names as necessary
+    branches: [main]  
   pull_request:
-    branches: [main]  # adjust the branch names as necessary
+    branches: [main]
 
 jobs:
   build_and_test:

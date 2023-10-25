@@ -4,6 +4,7 @@ use std::error::Error;
 const BUILD_PATH: &str = "geist_ws/src/geist";
 const IMAGE_NAME: &str = "geist";
 const CONTAINER_NAME: &str = "geist";
+const USERNAME: &str = "july5613";
 
 /// builds geist
 pub async fn build() -> Result<(), Box<dyn Error>> {
@@ -32,7 +33,6 @@ pub async fn build() -> Result<(), Box<dyn Error>> {
 
     println!("Docker image built successfully.");
     Ok(())
-
 }
 
 pub async fn logs() -> Result<(), Box<dyn Error>> {
@@ -49,15 +49,20 @@ pub async fn logs() -> Result<(), Box<dyn Error>> {
             "Docker logs command failed",
         )));
     }
-
     Ok(())
 }
 
-pub async fn start() -> Result<(), Box<dyn Error>> {
+pub async fn start(version: Option<String>) -> Result<(), Box<dyn Error>> {
+
+    // lets make a version string
+    let ver = match version {
+        Some(ver) => ver,
+        None => "latest".to_string(),
+    };
+
     println!("\n");
     println!("=== Starting Geist ===");
-    let tag = "latest";
-    let image_name = format!("{}:{}", IMAGE_NAME, tag);
+    let image_name = format!("{}/{}:{}", USERNAME, IMAGE_NAME, ver);
 
     let run_command = format!(
         "docker run -it --rm \
@@ -71,7 +76,7 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
         {} \
         /bin/bash -c \"source install/setup.sh && cd src/geist && ros2 launch geist/launch/launch.py\"",
         CONTAINER_NAME,
-        image_name
+        image_name,
     );
 
     // Starting the Docker container
@@ -129,10 +134,15 @@ pub async fn version() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Updates the bootloader.
-pub async fn update() -> Result<(), Box<dyn std::error::Error>> {
-    let home = std::env::var("HOME").unwrap();
-    let build_path = format!("{}/{}", home, BUILD_PATH);
+pub async fn update(version: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+    let image_path = format!("{}/{}", USERNAME, IMAGE_NAME);
 
+    let ver = match version {
+        Some(ver) => ver,
+        None => "latest".to_string(),
+    };
+
+    // clean up
     println!("\n");
     println!("=== Cleaning up Geist ===");
     println!("Pruning old unused images...");
@@ -142,13 +152,15 @@ pub async fn update() -> Result<(), Box<dyn std::error::Error>> {
         .status()?;
     println!("Pruning complete.");
 
-    // git pull
+    // update geist
     println!("\n");
     println!("=== Updating Geist ===");
+    println!("Updating to version: {}", ver);
+
+    // Add logic to update to the specified version
     Command::new("bash")
         .arg("-c")
-        .current_dir(build_path)
-        .arg(format!("git pull origin main"))
+        .arg(format!("docker pull {}:{}", image_path, ver))
         .status()?;
 
     Ok(())
