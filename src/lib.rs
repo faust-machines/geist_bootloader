@@ -71,6 +71,7 @@ pub async fn start(version: Option<String>) -> Result<(), Box<dyn Error>> {
         -d \
         --env=\"DISPLAY\" \
         --volume=\"/tmp/.X11-unix:/tmp/.X11-unix:rw\" \
+        -v /dev/bus/usb:/dev/bus/usb --device-cgroup-rule='c 189:* rmw' \
         -p 9090:9090 \
         -p 9091:9091 \
         {} \
