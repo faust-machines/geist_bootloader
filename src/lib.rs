@@ -1,5 +1,6 @@
 use std::process::Command;
 use std::error::Error;
+use std::process::Output;
 
 const BUILD_PATH: &str = "geist_ws/src/geist";
 const IMAGE_NAME: &str = "geist";
@@ -71,6 +72,7 @@ pub async fn start(version: Option<String>) -> Result<(), Box<dyn Error>> {
         -d \
         --env=\"DISPLAY\" \
         --volume=\"/tmp/.X11-unix:/tmp/.X11-unix:rw\" \
+        -v /dev/bus/usb:/dev/bus/usb --device-cgroup-rule='c 189:* rmw' \
         -p 9090:9090 \
         -p 9091:9091 \
         {} \
@@ -114,6 +116,101 @@ pub async fn stop() -> Result<(), Box<dyn Error>> {
     println!("{} stopped successfully.", CONTAINER_NAME);
     Ok(())
 }
+
+pub async fn list_services() -> Result<(), Box<dyn std::error::Error>> {
+    let output = run_docker_exec("ros2 service list")?;
+
+    let filtered_output: Vec<String> = output.stdout
+        .split(|c| c == &b'\n')
+        .filter_map(|line| {
+            let line_str = String::from_utf8_lossy(line);
+            if !line_str.ends_with("/describe_parameters")
+                && !line_str.ends_with("/get_parameters")
+                && !line_str.ends_with("/list_parameters")
+                && !line_str.ends_with("/set_parameters")
+                && !line_str.ends_with("/get_parameter_types")
+                && !line_str.ends_with("/set_parameters_atomically")
+            {
+                Some(line_str.to_string())
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    // Joining the filtered lines back into a single string
+    let joined_output = filtered_output.join("\n");
+    println!("{}", joined_output);
+
+    Ok(())
+}
+
+pub async fn call_service(address: String, type_: String, data: String) -> Result<(), Box<dyn std::error::Error>> {
+    let command = format!("ros2 service call {} {} \"{}\"", address, type_, data);
+    let output = run_docker_exec(&command)?;
+    println!("{}", String::from_utf8_lossy(&output.stdout));
+    Ok(())
+}
+
+pub async fn list_topics() -> Result<(), Box<dyn std::error::Error>> {
+    let output = run_docker_exec("ros2 topic list")?;
+
+    let filtered_output: Vec<String> = output
+        .stdout
+        .split(|c| c == &b'\n')
+        .filter_map(|line| {
+            let line_str = String::from_utf8_lossy(line);
+            if !line_str.contains("/client_count")
+                && !line_str.contains("/connected_clients")
+                && !line_str.contains("/parameter_events")
+                && !line_str.contains("/rosout")
+            {
+                Some(line_str.to_string())
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    // If you want to print the filtered output as a single string
+    let joined_output = filtered_output.join("\n");
+    println!("{}", joined_output);
+
+    Ok(())
+}
+
+pub async fn get_topic_type(name: String) -> Result<(), Box<dyn std::error::Error>> {
+    let command = format!("ros2 topic type {}", name);
+    let output = run_docker_exec(&command)?;
+    println!("{}", String::from_utf8_lossy(&output.stdout));
+    Ok(())
+}
+
+pub async fn echo_topic(name: String) -> Result<(), Box<dyn std::error::Error>> {
+    let command = format!("ros2 topic echo {}", name);
+    let output = run_docker_exec(&command)?;
+    println!("{}", String::from_utf8_lossy(&output.stdout));
+    Ok(())
+}
+
+// Helper function to run `docker exec`
+fn run_docker_exec(command: &str) -> Result<Output, Box<dyn std::error::Error>> {
+    let cmd = format!("docker exec {} bash -c \"source install/setup.sh && {}\"", CONTAINER_NAME, command);
+    let output = Command::new("bash")
+        .arg("-c")
+        .arg(cmd)
+        .output()?;
+
+    if !output.status.success() {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Docker exec command failed",
+        )));
+    }
+
+    Ok(output)
+}
+
 
 /// Returns the version of geist that is running
 pub async fn version() -> Result<(), Box<dyn std::error::Error>> {
