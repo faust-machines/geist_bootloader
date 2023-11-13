@@ -302,6 +302,8 @@ pub async fn status() -> Result<(), Box<dyn Error>> {
 
 pub async fn exec() -> Result<(), Box<dyn Error>> {
     // Check if Geist is running
+    println!("\n");
+    println!("=== Connecting to Geist ===");
     let running_container_id = Command::new("docker")
         .args(["ps", "-q", "-f", &format!("name={}", CONTAINER_NAME)])
         .output()?;
