@@ -14,6 +14,8 @@ enum Commands {
     /// Tails the logs from the geist
     Logs,
     Service(ServiceCommand),
+    /// Checks the status of the Geist service
+    Status,
     Start(StartOpts),
     /// Stops geist
     Stop,
@@ -21,6 +23,8 @@ enum Commands {
     /// Prints the version of geist
     Version,
     Update(UpdateOpts),
+    /// Opens an interactive shell in the Geist container
+    Exec,
 }
 
 #[derive(Args)]
@@ -91,6 +95,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Version => geist_bootloader::version().await?,
         Commands::Update(update_opts) => {
             geist_bootloader::update(update_opts.version.clone()).await?
+        }
+        Commands::Status => {
+            geist_bootloader::status().await?;
+        }
+        Commands::Exec => {
+            geist_bootloader::exec().await?;
         }
     }
     Ok(())
