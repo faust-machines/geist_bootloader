@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::process::Command;
+use std::process::Output;
 
 const BUILD_PATH: &str = "geist_ws/src/geist";
 const IMAGE_NAME: &str = "geist";
