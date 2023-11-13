@@ -16,7 +16,6 @@ anyhow = "1.0.75"
 clap = { version = "4.4.7", features = ["derive"] }
 tokio = { version = "1.33.0", features = ["rt-multi-thread", "macros"] }
 
-
 [[bin]]
 name = "geist"
 path = "src/main.rs"
