@@ -1,11 +1,7 @@
 use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser)]
-#[clap(
-    version = "1.0",
-    author = "Your Name",
-    about = "Geist Command Line Interface"
-)]
+#[clap(version = "1.0", about = "Geist Command Line Interface")]
 struct Cli {
     #[clap(subcommand)]
     pub command: Commands,
