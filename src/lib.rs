@@ -1,5 +1,5 @@
-use std::process::Command;
 use std::error::Error;
+use std::process::Command;
 
 const BUILD_PATH: &str = "geist_ws/src/geist";
 const IMAGE_NAME: &str = "geist";
@@ -53,7 +53,6 @@ pub async fn logs() -> Result<(), Box<dyn Error>> {
 }
 
 pub async fn start(version: Option<String>) -> Result<(), Box<dyn Error>> {
-
     // lets make a version string
     let ver = match version {
         Some(ver) => ver,
@@ -81,10 +80,7 @@ pub async fn start(version: Option<String>) -> Result<(), Box<dyn Error>> {
     );
 
     // Starting the Docker container
-    let start_status = Command::new("bash")
-        .arg("-c")
-        .arg(run_command)
-        .status()?;
+    let start_status = Command::new("bash").arg("-c").arg(run_command).status()?;
 
     if !start_status.success() {
         return Err(Box::new(std::io::Error::new(
@@ -118,11 +114,13 @@ pub async fn stop() -> Result<(), Box<dyn Error>> {
 
 /// Returns the version of geist that is running
 pub async fn version() -> Result<(), Box<dyn std::error::Error>> {
-
     // Run `cat` inside the Docker container
     let output = Command::new("bash")
         .arg("-c")
-        .arg(format!("docker exec {} cat /root/geist_ws/src/geist/VERSION", CONTAINER_NAME))
+        .arg(format!(
+            "docker exec {} cat /root/geist_ws/src/geist/VERSION",
+            CONTAINER_NAME
+        ))
         .output()?;
 
     if !output.status.success() {
