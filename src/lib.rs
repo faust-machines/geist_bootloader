@@ -270,3 +270,66 @@ pub async fn update(version: Option<String>) -> Result<(), Box<dyn std::error::E
 
     Ok(())
 }
+
+pub async fn status() -> Result<(), Box<dyn Error>> {
+    println!("\n");
+    println!("=== Geist Status ===");
+    // Check if Geist is running
+    let running_container_id = Command::new("docker")
+        .args(["ps", "-q", "-f", &format!("name={}", CONTAINER_NAME)])
+        .output()?;
+
+    if running_container_id.stdout.is_empty() {
+        println!("Geist is not running.");
+    } else {
+        println!("Geist is running.");
+
+        // Show the currently running version
+        let current_tag = Command::new("docker")
+            .args(["inspect", "--format", "{{.Config.Image}}", CONTAINER_NAME])
+            .output()?;
+
+        if !current_tag.stdout.is_empty() {
+            println!(
+                "Current tag: {}",
+                String::from_utf8_lossy(&current_tag.stdout).trim()
+            );
+        }
+    }
+
+    Ok(())
+}
+
+pub async fn exec() -> Result<(), Box<dyn Error>> {
+    // Check if Geist is running
+    let running_container_id = Command::new("docker")
+        .args(["ps", "-q", "-f", &format!("name={}", CONTAINER_NAME)])
+        .output()?;
+
+    if running_container_id.stdout.is_empty() {
+        println!("Geist is not currently running. Do you want to start it? [y/N]");
+        let mut user_input = String::new();
+        std::io::stdin().read_line(&mut user_input)?;
+
+        if user_input.trim().eq_ignore_ascii_case("y") {
+            start(None).await?;
+        } else {
+            println!("Operation canceled.");
+            return Ok(());
+        }
+    }
+
+    println!("Connecting to Geist. Press Ctrl+D to exit.");
+    let exec_status = Command::new("docker")
+        .args(["exec", "-ti", CONTAINER_NAME, "/bin/bash"])
+        .status()?;
+
+    if !exec_status.success() {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Failed to execute an interactive shell",
+        )));
+    }
+
+    Ok(())
+}
