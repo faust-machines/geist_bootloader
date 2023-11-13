@@ -1,8 +1,11 @@
 use clap::{Args, Parser, Subcommand};
-use geist_bootloader;
 
 #[derive(Parser)]
-#[clap(version = "1.0", author = "Your Name", about = "Geist Command Line Interface")]
+#[clap(
+    version = "1.0",
+    author = "Your Name",
+    about = "Geist Command Line Interface"
+)]
 struct Cli {
     #[clap(subcommand)]
     pub command: Commands,
@@ -90,7 +93,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             TopicOpts::Echo { name } => geist_bootloader::echo_topic(name.clone()).await?,
         },
         Commands::Version => geist_bootloader::version().await?,
-        Commands::Update(update_opts) => geist_bootloader::update(update_opts.version.clone()).await?,
+        Commands::Update(update_opts) => {
+            geist_bootloader::update(update_opts.version.clone()).await?
+        }
     }
     Ok(())
 }

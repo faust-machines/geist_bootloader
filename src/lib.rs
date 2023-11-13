@@ -116,7 +116,8 @@ pub async fn stop() -> Result<(), Box<dyn Error>> {
 pub async fn list_services() -> Result<(), Box<dyn std::error::Error>> {
     let output = run_docker_exec("ros2 service list")?;
 
-    let filtered_output: Vec<String> = output.stdout
+    let filtered_output: Vec<String> = output
+        .stdout
         .split(|c| c == &b'\n')
         .filter_map(|line| {
             let line_str = String::from_utf8_lossy(line);
@@ -141,7 +142,11 @@ pub async fn list_services() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub async fn call_service(address: String, type_: String, data: String) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn call_service(
+    address: String,
+    type_: String,
+    data: String,
+) -> Result<(), Box<dyn std::error::Error>> {
     let command = format!("ros2 service call {} {} \"{}\"", address, type_, data);
     let output = run_docker_exec(&command)?;
     println!("{}", String::from_utf8_lossy(&output.stdout));
@@ -191,11 +196,11 @@ pub async fn echo_topic(name: String) -> Result<(), Box<dyn std::error::Error>> 
 
 // Helper function to run `docker exec`
 fn run_docker_exec(command: &str) -> Result<Output, Box<dyn std::error::Error>> {
-    let cmd = format!("docker exec {} bash -c \"source install/setup.sh && {}\"", CONTAINER_NAME, command);
-    let output = Command::new("bash")
-        .arg("-c")
-        .arg(cmd)
-        .output()?;
+    let cmd = format!(
+        "docker exec {} bash -c \"source install/setup.sh && {}\"",
+        CONTAINER_NAME, command
+    );
+    let output = Command::new("bash").arg("-c").arg(cmd).output()?;
 
     if !output.status.success() {
         return Err(Box::new(std::io::Error::new(
@@ -206,7 +211,6 @@ fn run_docker_exec(command: &str) -> Result<Output, Box<dyn std::error::Error>> 
 
     Ok(output)
 }
-
 
 /// Returns the version of geist that is running
 pub async fn version() -> Result<(), Box<dyn std::error::Error>> {
