@@ -67,9 +67,8 @@ pub async fn start(version: Option<String>) -> Result<(), Box<dyn Error>> {
     let run_command = format!(
         "docker run -it --rm \
         --name {} \
-        --net=host \
-        -d \
         --env=\"DISPLAY\" \
+        -d \
         --volume=\"/tmp/.X11-unix:/tmp/.X11-unix:rw\" \
         -v /dev/bus/usb:/dev/bus/usb --device-cgroup-rule='c 189:* rmw' \
         -p 9090:9090 \
@@ -79,6 +78,9 @@ pub async fn start(version: Option<String>) -> Result<(), Box<dyn Error>> {
         CONTAINER_NAME,
         image_name,
     );
+
+    println!("Starting Geist with the following command:");
+    println!("{}", run_command);
 
     // Starting the Docker container
     let start_status = Command::new("bash").arg("-c").arg(run_command).status()?;
