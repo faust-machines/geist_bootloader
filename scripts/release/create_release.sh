@@ -8,7 +8,6 @@ if [ "$current_branch" != "main" ]; then
   exit 1
 fi
 
-
 # Check if tag_name argument is provided
 if [ -z "$1" ]; then
   echo "Usage: $0 <new_tag_name>"
@@ -18,17 +17,35 @@ fi
 # Assign new tag name from the first argument
 new_tag_name=$1
 
-# Get the latest release tag
-latest_tag=$(git describe --tags --abbrev=0)
+# Check if there are any existing tags
+if git describe --tags --abbrev=0 > /dev/null 2>&1; then
 
-# Get the commit hash associated with the latest release tag
-latest_commit_hash=$(git rev-list -n 1 $latest_tag)
+  # Get the latest release tag
+  latest_tag=$(git describe --tags --abbrev=0)
 
-# Get the commit date in ISO 8601 format
-latest_commit_date=$(git show -s --format=%ci $latest_commit_hash)
+  # Get the commit hash associated with the latest release tag
+  latest_commit_hash=$(git rev-list -n 1 $latest_tag)
 
-# Convert to a format suitable for the GitHub search API (optional)
-latest_commit_date=$(date -u -d "$latest_commit_date" +%Y-%m-%dT%H:%M:%SZ)
+  # Get the commit date in ISO 8601 format
+  latest_commit_date=$(git show -s --format=%ci $latest_commit_hash)
+
+  # Check OS for date command compatibility and convert the date
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS (BSD) - using 'cut' to remove the timezone part and then convert
+    latest_commit_date=$(echo $latest_commit_date | cut -d ' ' -f 1-2)
+    latest_commit_date=$(date -j -f "%Y-%m-%d %H:%M:%S" "$latest_commit_date" "+%Y-%m-%dT%H:%M:%SZ")
+  else
+    # Linux (GNU) - direct conversion
+    latest_commit_date=$(date -u -d "$latest_commit_date" "+%Y-%m-%dT%H:%M:%SZ")
+  fi
+
+else
+  echo "No existing tags found. Proceeding without previous tag information."
+  latest_tag="None"
+  latest_commit_hash="None"
+  # Use a very old date to include all PRs in the release notes
+  latest_commit_date="1970-01-01T00:00:00Z"
+fi
 
 # Generate the release notes
 release_notes=$(gh pr list --base main --search "is:closed merged:>=${latest_commit_date}" --json number,title,author | jq -r '.[] | "- [#\(.number)]: \(.title)"')
