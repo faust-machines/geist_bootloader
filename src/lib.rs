@@ -79,9 +79,6 @@ pub async fn start(version: Option<String>) -> Result<(), Box<dyn Error>> {
         image_name,
     );
 
-    println!("Starting Geist with the following command:");
-    println!("{}", run_command);
-
     // Starting the Docker container
     let start_status = Command::new("bash").arg("-c").arg(run_command).status()?;
 
