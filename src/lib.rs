@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::process::Command;
 use std::process::Output;
+use std::path::Path;
 
 const BUILD_PATH: &str = "geist_ws/src/geist";
 const IMAGE_NAME: &str = "geist";
@@ -53,18 +54,16 @@ pub async fn logs() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub async fn start(version: Option<String>) -> Result<(), Box<dyn Error>> {
-    // lets make a version string
-    let ver = match version {
-        Some(ver) => ver,
-        None => "latest".to_string(),
-    };
+/// This is the function that starts the Geist container
+pub async fn start(version: Option<String>, env_file: Option<String>) -> Result<(), Box<dyn Error>> {
+    // Existing version string logic
+    let ver = version.unwrap_or_else(|| "latest".to_string());
 
     println!("\n");
     println!("=== Starting Geist ===");
     let image_name = format!("{}/{}:{}", USERNAME, IMAGE_NAME, ver);
 
-    let run_command = format!(
+    let mut run_command = format!(
         "docker run -it --rm \
         --name {} \
         --env=\"DISPLAY\" \
@@ -78,6 +77,18 @@ pub async fn start(version: Option<String>) -> Result<(), Box<dyn Error>> {
         CONTAINER_NAME,
         image_name,
     );
+
+    // Check if .env file is provided and exists
+    if let Some(env_path) = env_file {
+        if Path::new(&env_path).exists() {
+            run_command = format!("{} --env-file {}", run_command, env_path);
+        } else {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("The specified .env file does not exist: {}", env_path),
+            )));
+        }
+    }
 
     // Starting the Docker container
     let start_status = Command::new("bash").arg("-c").arg(run_command).status()?;
@@ -93,6 +104,7 @@ pub async fn start(version: Option<String>) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// This is the function that stops the Geist container
 pub async fn stop() -> Result<(), Box<dyn Error>> {
     println!("\n");
     println!("=== Stopping Geist ===");
@@ -112,6 +124,7 @@ pub async fn stop() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// This is the function that lists all services within the container
 pub async fn list_services() -> Result<(), Box<dyn std::error::Error>> {
     let output = run_docker_exec("ros2 service list")?;
 
@@ -141,6 +154,7 @@ pub async fn list_services() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Makes a service call within the container
 pub async fn call_service(
     address: String,
     type_: String,
@@ -152,6 +166,7 @@ pub async fn call_service(
     Ok(())
 }
 
+/// This is the function that lists all the topics within the container
 pub async fn list_topics() -> Result<(), Box<dyn std::error::Error>> {
     let output = run_docker_exec("ros2 topic list")?;
 
@@ -179,6 +194,7 @@ pub async fn list_topics() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// This is the function that gets the type of a topic
 pub async fn get_topic_type(name: String) -> Result<(), Box<dyn std::error::Error>> {
     let command = format!("ros2 topic type {}", name);
     let output = run_docker_exec(&command)?;
@@ -186,6 +202,7 @@ pub async fn get_topic_type(name: String) -> Result<(), Box<dyn std::error::Erro
     Ok(())
 }
 
+/// This is the function that echoes a topic
 pub async fn echo_topic(name: String) -> Result<(), Box<dyn std::error::Error>> {
     let command = format!("ros2 topic echo {}", name);
     let output = run_docker_exec(&command)?;
@@ -313,7 +330,7 @@ pub async fn exec() -> Result<(), Box<dyn Error>> {
         std::io::stdin().read_line(&mut user_input)?;
 
         if user_input.trim().eq_ignore_ascii_case("y") {
-            start(None).await?;
+            start(None, None).await?;
         } else {
             println!("Operation canceled.");
             return Ok(());
