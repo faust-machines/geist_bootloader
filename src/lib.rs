@@ -1,7 +1,7 @@
 use std::error::Error;
+use std::path::Path;
 use std::process::Command;
 use std::process::Output;
-use std::path::Path;
 
 const BUILD_PATH: &str = "geist_ws/src/geist";
 const IMAGE_NAME: &str = "geist";
@@ -55,7 +55,10 @@ pub async fn logs() -> Result<(), Box<dyn Error>> {
 }
 
 /// This is the function that starts the Geist container
-pub async fn start(version: Option<String>, env_file: Option<String>) -> Result<(), Box<dyn Error>> {
+pub async fn start(
+    version: Option<String>,
+    env_file: Option<String>,
+) -> Result<(), Box<dyn Error>> {
     // Existing version string logic
     let ver = version.unwrap_or_else(|| "latest".to_string());
 

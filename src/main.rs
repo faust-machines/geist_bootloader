@@ -89,11 +89,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ServiceOpts::List => geist_bootloader::list_services().await?,
         },
         Commands::Start(start_opts) => {
-            geist_bootloader::start(
-                start_opts.version.clone(), 
-                start_opts.env_file.clone()
-        ).await?
-        },
+            geist_bootloader::start(start_opts.version.clone(), start_opts.env_file.clone()).await?
+        }
         Commands::Stop => geist_bootloader::stop().await?,
         Commands::Topic(topic_command) => match &topic_command.opt {
             TopicOpts::List => geist_bootloader::list_topics().await?,
