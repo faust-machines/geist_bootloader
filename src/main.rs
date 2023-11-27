@@ -32,6 +32,9 @@ enum Commands {
 struct StartOpts {
     #[clap(short, long)]
     version: Option<String>,
+    /// Optional path to the .env file
+    #[clap(short, long)]
+    env_file: Option<String>,
 }
 
 #[derive(Args)]
@@ -85,7 +88,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Service(service_command) => match &service_command.opt {
             ServiceOpts::List => geist_bootloader::list_services().await?,
         },
-        Commands::Start(start_opts) => geist_bootloader::start(start_opts.version.clone()).await?,
+        Commands::Start(start_opts) => {
+            geist_bootloader::start(start_opts.version.clone(), start_opts.env_file.clone()).await?
+        }
         Commands::Stop => geist_bootloader::stop().await?,
         Commands::Topic(topic_command) => match &topic_command.opt {
             TopicOpts::List => geist_bootloader::list_topics().await?,
