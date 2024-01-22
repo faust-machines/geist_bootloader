@@ -54,22 +54,24 @@ pub async fn logs() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-/// This is the function that starts the Geist container
-pub async fn start(
+async fn run_start_command(
     version: Option<String>,
-    env_file: Option<String>,
+    env_file_path: Option<String>,
 ) -> Result<(), Box<dyn Error>> {
     // Existing version string logic
     let ver = version.unwrap_or_else(|| "latest".to_string());
+    let env_path = env_file_path.unwrap_or_else(|| "".to_string());
 
     println!("\n");
     println!("=== Starting Geist ===");
     let image_name = format!("{}/{}:{}", USERNAME, IMAGE_NAME, ver);
 
-    let mut run_command = format!(
+    let run_command = format!(
         "docker run -it --rm \
         --name {} \
+        --network=\"host\" \
         --env=\"DISPLAY\" \
+        --env-file {} \
         -d \
         --volume=\"/tmp/.X11-unix:/tmp/.X11-unix:rw\" \
         -v /dev/bus/usb:/dev/bus/usb --device-cgroup-rule='c 189:* rmw' \
@@ -78,20 +80,9 @@ pub async fn start(
         {} \
         /bin/bash -c \"source install/setup.sh && cd src/geist && ros2 launch geist/launch/launch.py\"",
         CONTAINER_NAME,
+        env_path,
         image_name,
     );
-
-    // Check if .env file is provided and exists
-    if let Some(env_path) = env_file {
-        if Path::new(&env_path).exists() {
-            run_command = format!("{} --env-file {}", run_command, env_path);
-        } else {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                format!("The specified .env file does not exist: {}", env_path),
-            )));
-        }
-    }
 
     // Starting the Docker container
     let start_status = Command::new("bash").arg("-c").arg(run_command).status()?;
@@ -104,6 +95,16 @@ pub async fn start(
     }
 
     println!("{} started successfully.", CONTAINER_NAME);
+    Ok(())
+}
+
+/// This is the function that starts the Geist container
+pub async fn start(
+    version: Option<String>,
+    env_file: Option<String>,
+) -> Result<(), Box<dyn Error>> {
+    // call the run_start_command function
+    run_start_command(version, env_file).await?;
     Ok(())
 }
 
@@ -266,6 +267,20 @@ pub async fn update(version: Option<String>) -> Result<(), Box<dyn std::error::E
         None => "latest".to_string(),
     };
 
+    // first lets stop the existing version of geist
+    println!("\n");
+    println!("=== Stopping Geist ===");
+    let stop_status = Command::new("bash")
+        .arg("-c")
+        .arg(format!("docker stop {}", CONTAINER_NAME))
+        .status()?;
+    if !stop_status.success() {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "geist stop  failed",
+        )));
+    }
+
     // clean up
     println!("\n");
     println!("=== Cleaning up Geist ===");
@@ -286,6 +301,12 @@ pub async fn update(version: Option<String>) -> Result<(), Box<dyn std::error::E
         .arg("-c")
         .arg(format!("docker pull {}:{}", image_path, ver))
         .status()?;
+
+    // start the newly updated version
+    println!("\n");
+    println!("=== Starting Geist ===");
+
+    // run_start_command(Some(ver), None).await?;
 
     Ok(())
 }
