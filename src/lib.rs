@@ -65,22 +65,30 @@ async fn run_start_command(
     println!("\n");
     println!("=== Starting Geist ===");
     let image_name = format!("{}/{}:{}", USERNAME, IMAGE_NAME, ver);
+    println!("Starting Geist with image: {}", image_name);
+
+    // Conditionally add --env-file parameter
+    let env_file_option = if !env_path.is_empty() {
+        format!("--env-file {}", env_path)
+    } else {
+        String::new()
+    };
 
     let run_command = format!(
-        "docker run -it --rm \
+        "docker run -it -d --rm \
         --name {} \
         --network=\"host\" \
         --env=\"DISPLAY\" \
-        --env-file {} \
-        -d \
+        {} \
         --volume=\"/tmp/.X11-unix:/tmp/.X11-unix:rw\" \
+        -d \
         -v /dev/bus/usb:/dev/bus/usb --device-cgroup-rule='c 189:* rmw' \
         -p 9090:9090 \
         -p 9091:9091 \
         {} \
         /bin/bash -c \"source install/setup.sh && cd src/geist && ros2 launch geist/launch/launch.py\"",
         CONTAINER_NAME,
-        env_path,
+        env_file_option, // Insert the conditional env file option here
         image_name,
     );
 
@@ -267,20 +275,6 @@ pub async fn update(version: Option<String>) -> Result<(), Box<dyn std::error::E
         None => "latest".to_string(),
     };
 
-    // first lets stop the existing version of geist
-    println!("\n");
-    println!("=== Stopping Geist ===");
-    let stop_status = Command::new("bash")
-        .arg("-c")
-        .arg(format!("docker stop {}", CONTAINER_NAME))
-        .status()?;
-    if !stop_status.success() {
-        return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "geist stop  failed",
-        )));
-    }
-
     // clean up
     println!("\n");
     println!("=== Cleaning up Geist ===");
@@ -297,16 +291,17 @@ pub async fn update(version: Option<String>) -> Result<(), Box<dyn std::error::E
     println!("Updating to version: {}", ver);
 
     // Add logic to update to the specified version
+    let cmd = format!("docker pull {}:{}", image_path, ver);
     Command::new("bash")
         .arg("-c")
-        .arg(format!("docker pull {}:{}", image_path, ver))
+        .arg(cmd)
         .status()?;
 
     // start the newly updated version
     println!("\n");
     println!("=== Starting Geist ===");
 
-    // run_start_command(Some(ver), None).await?;
+    run_start_command(Some(ver), None).await?;
 
     Ok(())
 }
