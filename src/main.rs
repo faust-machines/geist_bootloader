@@ -9,8 +9,6 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Build the geist from code locally
-    Build,
     /// Tails the logs from the geist
     Logs,
     Service(ServiceCommand),
@@ -83,7 +81,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Build => geist_bootloader::build().await?,
         Commands::Logs => geist_bootloader::logs().await?,
         Commands::Service(service_command) => match &service_command.opt {
             ServiceOpts::List => geist_bootloader::list_services().await?,

@@ -10,7 +10,6 @@ Geist Command Line Interface
 Usage: geist <COMMAND>
 
 Commands:
-  build    Build the geist from code locally
   logs     Tails the logs from the geist
   service  Commands for interacting with Geist services
   status   Checks the status of the Geist service
