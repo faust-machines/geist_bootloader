@@ -75,7 +75,7 @@ async fn run_start_command(
     };
 
     let run_command = format!(
-        "docker run -it -d --rm \
+        "docker run -it --rm \
         --name {} \
         --network=\"host\" \
         --env=\"DISPLAY\" \
