@@ -1,41 +1,10 @@
 use std::error::Error;
-use std::path::Path;
 use std::process::Command;
 use std::process::Output;
 
-const BUILD_PATH: &str = "geist_ws/src/geist";
 const IMAGE_NAME: &str = "geist";
 const CONTAINER_NAME: &str = "geist";
 const USERNAME: &str = "july5613";
-
-/// builds geist
-pub async fn build() -> Result<(), Box<dyn Error>> {
-    println!("\n");
-    println!("=== Building Geist ===");
-    let tag = "latest";
-    let image_name = format!("{}:{}", IMAGE_NAME, tag);
-    let home = std::env::var("HOME").unwrap();
-    let build_path = format!("{}/{}", home, BUILD_PATH);
-
-    println!("Building Docker image from: {}", build_path);
-
-    // Building the Docker image
-    let build_status = Command::new("bash")
-        .current_dir(build_path)
-        .arg("-c")
-        .arg(format!("docker build -t {} .", image_name))
-        .status()?;
-
-    if !build_status.success() {
-        return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Docker build command failed",
-        )));
-    }
-
-    println!("Docker image built successfully.");
-    Ok(())
-}
 
 pub async fn logs() -> Result<(), Box<dyn Error>> {
     println!("\n");
@@ -65,7 +34,6 @@ async fn run_start_command(
     println!("\n");
     println!("=== Starting Geist ===");
     let image_name = format!("{}/{}:{}", USERNAME, IMAGE_NAME, ver);
-    println!("Starting Geist with image: {}", image_name);
 
     // Conditionally add --env-file parameter
     let env_file_option = if !env_path.is_empty() {
@@ -292,15 +260,9 @@ pub async fn update(version: Option<String>) -> Result<(), Box<dyn std::error::E
 
     // Add logic to update to the specified version
     let cmd = format!("docker pull {}:{}", image_path, ver);
-    Command::new("bash")
-        .arg("-c")
-        .arg(cmd)
-        .status()?;
+    Command::new("bash").arg("-c").arg(cmd).status()?;
 
     // start the newly updated version
-    println!("\n");
-    println!("=== Starting Geist ===");
-
     run_start_command(Some(ver), None).await?;
 
     Ok(())
