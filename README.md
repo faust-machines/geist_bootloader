@@ -1,5 +1,9 @@
 # geist_bootloader
 
+### Install 
+`cargo install geist_bootloader`
+
+### CLI commands
 ```
 Geist Command Line Interface
 
